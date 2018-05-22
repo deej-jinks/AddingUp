@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		377C362220B2EF6700485720 /* EmmasSumViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377C362120B2EF6700485720 /* EmmasSumViewController.swift */; };
 		379A7224208B9CF800BB67C6 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 379A7223208B9CF800BB67C6 /* AppDelegate.swift */; };
 		379A7226208B9CF800BB67C6 /* SumViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 379A7225208B9CF800BB67C6 /* SumViewController.swift */; };
 		379A7229208B9CF800BB67C6 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 379A7227208B9CF800BB67C6 /* Main.storyboard */; };
@@ -17,6 +18,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		377C362120B2EF6700485720 /* EmmasSumViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmmasSumViewController.swift; sourceTree = "<group>"; };
 		379A7220208B9CF800BB67C6 /* AddingUp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AddingUp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		379A7223208B9CF800BB67C6 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		379A7225208B9CF800BB67C6 /* SumViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SumViewController.swift; sourceTree = "<group>"; };
@@ -60,6 +62,7 @@
 			children = (
 				379A7223208B9CF800BB67C6 /* AppDelegate.swift */,
 				379A7225208B9CF800BB67C6 /* SumViewController.swift */,
+				377C362120B2EF6700485720 /* EmmasSumViewController.swift */,
 				37DF82E920A46D2D00BFB13E /* sum.swift */,
 				37DF82EB20A46F2800BFB13E /* User.swift */,
 				379A7227208B9CF800BB67C6 /* Main.storyboard */,
@@ -145,6 +148,7 @@
 				37DF82EC20A46F2800BFB13E /* User.swift in Sources */,
 				379A7226208B9CF800BB67C6 /* SumViewController.swift in Sources */,
 				37DF82EA20A46D2D00BFB13E /* sum.swift in Sources */,
+				377C362220B2EF6700485720 /* EmmasSumViewController.swift in Sources */,
 				379A7224208B9CF800BB67C6 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

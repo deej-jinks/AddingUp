@@ -19,23 +19,23 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
     let audioSession = AVAudioSession.sharedInstance()
     
     let speaker = AVSpeechSynthesizer()
+    var voicePitch: Float = 1.0
+    var speechRate: Float = 0.55
     var speechQueue = ""
+    var utterances: [AVSpeechUtterance] = []
     
     @IBOutlet weak var n1: UILabel!
     @IBOutlet weak var n2: UILabel!
-    @IBOutlet weak var answerInput: UITextField! {
-        didSet {
-            self.answerInput.delegate = self
-        }
-    }
+    @IBOutlet weak var answerInput: UILabel!
+    @IBOutlet weak var correctAnswer: UILabel!
     @IBOutlet weak var tickOrCross: UIImageView!
+    @IBOutlet weak var picturePlace: UIImageView!
     
     var sum: Sum!
     var user = User(name: "Emma")
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        answerInput.delegate = self
         speaker.delegate = self
         configureAudioSession()
         requestAuthorisations()
@@ -43,7 +43,7 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
     
     func configureAudioSession() {
         do {
-            try self.audioSession.setCategory(AVAudioSessionCategoryRecord)
+            try self.audioSession.setCategory(AVAudioSessionCategoryPlayAndRecord)
             try self.audioSession.setMode(AVAudioSessionModeMeasurement)
             try self.audioSession.setActive(true, with: .notifyOthersOnDeactivation)
         } catch {print("error 583DPJ")}
@@ -56,7 +56,6 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
                 case .authorized:
                     print("authorised")
                     self.audioSession.requestRecordPermission { (granted) in
-
                         self.authorisationsGranted()
                     }
                 case .denied:
@@ -96,15 +95,12 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
             if let nonNilResult = result {
                 let transcription = nonNilResult.bestTranscription.formattedString
                 print(transcription)
-                if let num = self.findNumbers(inString: transcription) {
-                    
+                if let num = findNumbers(inString: transcription) {
                     self.answerInput.text = "\(num)"
                     self.checkAnswer(num)
                 }
             }
-            
         })
-        
         self.audioEngine.prepare()
         do {try self.audioEngine.start()} catch {}
         print("Go ahead, I'm listening")
@@ -114,21 +110,31 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
         recognitionTask?.cancel()
     }
     
+    var timeSet = Date()
+    func setNewSum() {
+        tickOrCross.image = nil
+        answerInput.text = ""
+        correctAnswer.text = ""
+        sum = user.pickSum()
+        speak(sum: sum)
+        n1.text = "\(sum.n1)"
+        n2.text = "\(sum.n2)"
+        timeSet = Date()
+    }
+    
     func speak(sum: Sum) {
-        if speaker.isSpeaking {
-            speechQueue += " \(sum.n1) \(sum.op) \(sum.n2)"
-        } else {
-            speaker.speak(AVSpeechUtterance(string: "\(sum.n1) \(sum.op) \(sum.n2)"))
-        }
+        say(" \(sum.n1) \(sum.op) \(sum.n2)")
     }
     
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, willSpeakRangeOfSpeechString characterRange: NSRange, utterance: AVSpeechUtterance) {
-    }
-    
+    var sumToBeSet = false
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
-        if speechQueue != "" {
-            speaker.speak(AVSpeechUtterance(string: speechQueue))
-            speechQueue = ""
+        if sumToBeSet && utterances.count == 0 {
+            setNewSum()
+            sumToBeSet = false
+        }
+        if utterances.count > 0 {
+            let utterance = utterances.popLast()!
+            speaker.speak(utterance)
         } else {
             startListening()
         }
@@ -138,89 +144,20 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
         stopListening()
         print("started talking")
     }
-    /*
-    func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didContinue utterance: AVSpeechUtterance) {
-        stopListening()
-        print("continued talking")
-    }
- */
-    
-    func findNumbers(inString str: String) -> Int? {
-        let words = str.split(separator: " ")
-        for word in words {
-            switch word.lowercased() {
-            case "11", "eleven":
-                return 11
-            case "12", "twelve":
-                return 12
-            case "13", "thirteen":
-                return 13
-            case "14", "fourteen":
-                return 14
-            case "15", "fifteen":
-                return 15
-            case "16", "sixteen":
-                return 16
-            case "17", "seventeen":
-                return 17
-            case "18", "eighteen":
-                return 18
-            case "19", "nineteen":
-                return 19
-            case "20", "twenty":
-                return 20
-            case "0", "zero":
-                return 0
-            case "1", "one":
-                return 1
-            case "2", "two", "too":
-                return 2
-            case "3", "three":
-                return 3
-            case "4", "four", "for":
-                return 4
-            case "5", "five":
-                return 5
-            case "6", "six":
-                return 6
-            case "7", "seven":
-                return 7
-            case "8", "eight", "ate":
-                return 8
-            case "9", "nine":
-                return 9
-            case "10", "ten":
-                return 10
-            default: continue
-                
-            }
+
+    func say(_ words: String) {
+        let utterance = AVSpeechUtterance(string: words)
+        utterance.pitchMultiplier = voicePitch
+        utterance.rate = speechRate
+        utterance.postUtteranceDelay = 0.15
+        if speaker.isSpeaking {
+            utterances.insert(utterance, at: 0)
+        } else {
+            speaker.speak(utterance)
         }
-        return nil
-    }
-
-    var timeSet = Date()
-    func setNewSum() {
-       
-        tickOrCross.image = nil
-        sum = user.pickSum()
-        speak(sum: sum)
-        n1.text = "\(sum.n1)"
-        n2.text = "\(sum.n2)"
-        answerInput.text = ""
-        answerInput.becomeFirstResponder()
-        timeSet = Date()
     }
     
-    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-        textField.resignFirstResponder()
-        return true
-    }
-    
-    func textFieldDidEndEditing(_ textField: UITextField) {
-        guard textField == answerInput else { return }
-
-        checkAnswer(Int(textField.text!)!)
-    }
+    //////////////////// Bits for Emma after here /////////////////////
     
     func checkAnswer(_ n: Int) {
         stopListening()
@@ -228,17 +165,134 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
         let isCorrect = sum.submitAnswer(answer: n, timeTaken: timeTaken)
         print("\(isCorrect) answer submitted in time : \(timeTaken)")
         if isCorrect {
-            speaker.speak(AVSpeechUtterance(string: "That's right. Well done \(user.name)!"))
+            let rand = arc4random_uniform(12)
+            switch rand {
+            case 0:
+                say("That's right.")
+            case 1:
+                say("Well done, you're a superstar \(user.name)!")
+            case 2:
+                say("superstar")
+            case 3:
+                say("great")
+            case 4:
+                say("well done \(user.name), have a song. Heeeeey macarena ay!")
+            case 5:
+                say("nice work \(user.name)")
+            case 6:
+                say("that's right \(user.name), let's change the colour")
+                let red = CGFloat(arc4random())/CGFloat(UINT32_MAX)
+                let green = CGFloat(arc4random())/CGFloat(UINT32_MAX)
+                let blue = CGFloat(arc4random())/CGFloat(UINT32_MAX)
+                let colour = UIColor(red: red, green: green, blue: blue, alpha: 1.0)
+                view.backgroundColor = colour
+            case 7,8:
+                if (picturePlace.image != #imageLiteral(resourceName: "unicorn")) {
+                    say("fantastic! Have a unicorn")
+                    picturePlace.image = #imageLiteral(resourceName: "unicorn")
+                } else {
+                    say("fantastic! Have a rainbow")
+                    picturePlace.image = #imageLiteral(resourceName: "rainbow")
+                }
+            case 9, 10, 11:
+                if voicePitch == 1.0 {
+                    say("great! I'll put on a silly voice")
+                    voicePitch = (arc4random_uniform(10) >= 5) ? 2.0 : 0.5
+                    say("hello")
+                    say("oh no! It's stuck like that!")
+                } else {
+                    say("well done, that's right")
+                    if voicePitch != 1.0 {
+                        voicePitch = 1.0
+                        say("phew, I got my voice back")
+                    }
+                }
+            default:
+                say("That's right. Well done \(user.name)!")
+            }
             tickOrCross.image = #imageLiteral(resourceName: "tick")
         } else {
-            speaker.speak(AVSpeechUtterance(string: "I'm sorry, that's not right."))
+            let rand = arc4random_uniform(5)
+            switch rand {
+            case 0:
+                say("wrong")
+            case 1:
+                say("incorrect")
+            case 2:
+                say("bing bong bing, bingly bongly bing, bing bong bing you're wrong!")
+            case 3:
+                say("oh no, that's not right")
+            case 4:
+                say("Hmm. Not quite. Have a sad cloud.")
+                picturePlace.image = #imageLiteral(resourceName: "sad_cloud")
+            default:
+                say("I'm sorry, that's not right.")
+            }
             tickOrCross.image = #imageLiteral(resourceName: "cross")
+            correctAnswer.text = "\(sum.answer)"
         }
-        DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + 0.5) {
-            self.setNewSum()
+        DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + (isCorrect ? 0.5 : 1.5)) {
+            if !self.speaker.isSpeaking {
+                self.setNewSum()
+            } else {
+                self.sumToBeSet = true
+            }
         }
     }
+}
 
-    
+
+/////////////////////// other stuff ////////////////////////
+
+fileprivate func findNumbers(inString str: String) -> Int? {
+    let words = str.split(separator: " ")
+    for word in words {
+        switch word.lowercased() {
+        case "11", "eleven":
+            return 11
+        case "12", "twelve":
+            return 12
+        case "13", "thirteen":
+            return 13
+        case "14", "fourteen":
+            return 14
+        case "15", "fifteen":
+            return 15
+        case "16", "sixteen":
+            return 16
+        case "17", "seventeen":
+            return 17
+        case "18", "eighteen":
+            return 18
+        case "19", "nineteen":
+            return 19
+        case "20", "twenty":
+            return 20
+        case "0", "zero":
+            return 0
+        case "1", "one":
+            return 1
+        case "2", "two", "too", "to":
+            return 2
+        case "3", "three":
+            return 3
+        case "4", "four", "for":
+            return 4
+        case "5", "five":
+            return 5
+        case "6", "six", "sex":
+            return 6
+        case "7", "seven":
+            return 7
+        case "8", "eight", "ate":
+            return 8
+        case "9", "nine":
+            return 9
+        case "10", "ten":
+            return 10
+        default: continue
+        }
+    }
+    return nil
 }
 

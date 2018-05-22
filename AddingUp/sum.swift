@@ -35,7 +35,7 @@ class Sum {
     }
     
     public func hasLearned() -> LearnedStatus {
-        guard history.count >= 3 else { return .NotTriedEnough }
+        guard history.count >= 2 else { return .NotTriedEnough }
         var numAnswers = 0
         var numRight = 0
         var totTime = 0.0
@@ -46,7 +46,7 @@ class Sum {
         }
         guard numRight >= 0 else { return .GettingWrong }
         guard numRight == numAnswers else { return .Inconclusive }
-        if Double(totTime) / Double(numAnswers) < 3.0 {
+        if Double(totTime) / Double(numAnswers) < 6.5 {
             return .Learned
         } else {
             return .GettingRightButSlow
@@ -64,7 +64,7 @@ class Sum {
     }
     
     
-    private var answer: Int {
+    public var answer: Int {
         switch op {
         case "+": return n1 + n2
         case "-": return n1 - n2
