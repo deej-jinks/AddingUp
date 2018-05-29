@@ -57,10 +57,13 @@ class Sum {
     public func getBaseDifficulty() -> Int {
         guard op == "+" else { return 1000 }
         var diff = max(n1 + n2 - 5, 1) // bigger nos are harder
-        if n1 % 10 + n2 % 10 > 10 {
-            diff += 5 // carrying tens is hard
+        if n1 == 1 || n2 == 1 {
+            diff /= 2 // adding ones is particularly easy
         }
-        return diff * diff * diff
+        if n1 % 10 + n2 % 10 > 10 {
+            diff += 4 // carrying tens is hard
+        }
+        return diff
     }
     
     

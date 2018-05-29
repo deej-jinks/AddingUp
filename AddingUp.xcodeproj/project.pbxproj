@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		377C362220B2EF6700485720 /* EmmasSumViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377C362120B2EF6700485720 /* EmmasSumViewController.swift */; };
+		377C362420BAA9D500485720 /* dance_song.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 377C362320BAA9D400485720 /* dance_song.mp3 */; };
 		379A7224208B9CF800BB67C6 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 379A7223208B9CF800BB67C6 /* AppDelegate.swift */; };
 		379A7226208B9CF800BB67C6 /* SumViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 379A7225208B9CF800BB67C6 /* SumViewController.swift */; };
 		379A7229208B9CF800BB67C6 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 379A7227208B9CF800BB67C6 /* Main.storyboard */; };
@@ -19,6 +20,7 @@
 
 /* Begin PBXFileReference section */
 		377C362120B2EF6700485720 /* EmmasSumViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmmasSumViewController.swift; sourceTree = "<group>"; };
+		377C362320BAA9D400485720 /* dance_song.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = dance_song.mp3; sourceTree = "<group>"; };
 		379A7220208B9CF800BB67C6 /* AddingUp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AddingUp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		379A7223208B9CF800BB67C6 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		379A7225208B9CF800BB67C6 /* SumViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SumViewController.swift; sourceTree = "<group>"; };
@@ -66,6 +68,7 @@
 				37DF82E920A46D2D00BFB13E /* sum.swift */,
 				37DF82EB20A46F2800BFB13E /* User.swift */,
 				379A7227208B9CF800BB67C6 /* Main.storyboard */,
+				377C362320BAA9D400485720 /* dance_song.mp3 */,
 				379A722A208B9CF800BB67C6 /* Assets.xcassets */,
 				379A722C208B9CF800BB67C6 /* LaunchScreen.storyboard */,
 				379A722F208B9CF800BB67C6 /* Info.plist */,
@@ -134,6 +137,7 @@
 			files = (
 				379A722E208B9CF800BB67C6 /* LaunchScreen.storyboard in Resources */,
 				379A722B208B9CF800BB67C6 /* Assets.xcassets in Resources */,
+				377C362420BAA9D500485720 /* dance_song.mp3 in Resources */,
 				379A7229208B9CF800BB67C6 /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
