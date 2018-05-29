@@ -15,22 +15,27 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
     // key numbers
     let updateInterval = 0.025
     let meterBoost = 0.2
-    let NormalMeterSpeed = 1.0 / 60.0
-    let SlowMeterSpeed = 1.0 / 800.0
+    var sumsAnswered = 0
+    var NormalMeterSpeed: Double {
+        return 0.02 + Double(sumsAnswered) * 0.00025
+    }
+    let SlowMeterSpeed = 0.001
     
     var level = 1
     var score = 0
     
-    var meterSpeed = 1.0 / 60.0
+    var meterSpeed = 1.0 / 50.0
     var voicePitch: Float = 1.0
     var speechRate: Float = 0.55
 
     // state variables
-    var updating = true {
+    var paused = true {
         didSet {
-            if updating == true { runUpdateCycle() }
+            if paused == false { runUpdateCycle() }
         }
     }
+    let actionQueue = ActionQueue()
+    /*
     var paused = false {
         didSet {
             if paused {
@@ -44,6 +49,7 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
             }
         }
     }
+ */
     enum ListeningType {
         case Name
         case NameConfirmation
@@ -86,26 +92,30 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        askName()
+        speaker.delegate = self
+        configureAudioSession()
+        requestAuthorisations()
+        
     }
     
     enum GameAction {
         case AskName
+        case ListenForName
         case ConfirmName
+        case ListenForConfirmation
         case SetSum
+        case ListenForAnswer
         case CheckAnswer
         case GameOver
         case LevelUp
     }
-    var nextAction = GameAction.AskName
+    var nextAction = (GameAction.AskName,"")
     var readyForNextAction = true
     
     func askName() {
         say("Welcome to Emma's Adding Up Game")
         say("What's your name?")
-        speaker.delegate = self
-        configureAudioSession()
-        requestAuthorisations()
+        listen(for: .Name)
     }
     
     func startGame() {
@@ -113,15 +123,17 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
         UIView.animate(withDuration: 1.5, animations: {
             self.modalView.alpha = 0.0
         }) { (success) in
+            self.say("Let's go!")
             self.setNewSum()
-            self.runUpdateCycle()
+            //self.sumToBeSet = true
+            self.paused = false
         }
     }
 
     func update() {
         meterPercent -= meterSpeed * updateInterval
         if meterPercent <= 0.0 {
-            updating = false
+            paused = true
             loseGame()
         }
         meterHeight.constant =  (meterBox.bounds.height - 10.0) * CGFloat(meterPercent)
@@ -130,6 +142,8 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
     }
     
     func loseGame() {
+        stopListening()
+        actionQueue.actionCompleted()
         say("Game over")
         modalView.backgroundColor = UIColor.blue
         modalTitle.text = "Game Over"
@@ -139,7 +153,14 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
             self.modalView.alpha = 1.0
         })
         say("Well done, you scored \(score)")
-        
+    }
+    
+    func resetUI() {
+        meterPercent = 0.5
+        n1.text = ""
+        n2.text = ""
+        tickOrCross.image = nil
+        answerInput.text = ""
     }
     
     func levelUp() {
@@ -153,6 +174,7 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
             self.modalView.alpha = 1.0
         }) { (success) in
             self.say("welcome to level \(self.level)")
+            self.resetUI()
             let deadline = DispatchTime.now() + 2.0
             DispatchQueue.main.asyncAfter(deadline: deadline, execute: {
                 self.playMusic(name: "dance_song", length: 10.0)
@@ -161,7 +183,8 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
                     UIView.animate(withDuration: 5.0, animations: {
                         self.modalView.alpha = 0.0
                     }, completion: { (success) in
-                        self.meterPercent = 0.5
+                        
+                        self.setNewSum()
                         self.paused = false
                     })
                 })
@@ -171,7 +194,7 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
     
     func runUpdateCycle() {
         update()
-        if updating {
+        if !paused {
             let deadline = DispatchTime.now() + updateInterval
             DispatchQueue.main.asyncAfter(deadline: deadline) {
                 self.runUpdateCycle()
@@ -210,6 +233,7 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
     
     func authorisationsGranted() {
         setupSpeechRecogniser()
+        askName()
     }
     
     func setupSpeechRecogniser() {
@@ -226,43 +250,100 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { (buffer: AVAudioPCMBuffer, when: AVAudioTime) in
             self.recognitionRequest!.append(buffer)}
     }
-    
+    /*
     func startListening() {
-        recognitionTask?.cancel()//stopListening() // if there's already a task, cancel it
+        
         print("starting listening")
-        self.recognitionTask = self.speechRecogniser!.recognitionTask(with: recognitionRequest!, resultHandler: { (result, error) in
-            print("heard something")
-                if let nonNilResult = result {
-                    let transcription = nonNilResult.bestTranscription.formattedString
-                    print("recognised speech : \(transcription)")
-                    switch self.listeningFor {
-                    case .Number:
-                        if let num = findNumbers(inString: transcription) {
-                            self.answerInput.text = "\(num)"
-                            self.checkAnswer(num)
-                        }
-                    case .Name:
-                            self.listeningFor = .NameConfirmation
-                            self.nameLabel.text = transcription
-                            self.say("Is your name \(transcription)?")
-                    case .NameConfirmation:
-                        if let yesNo = findYesNo(inString: transcription) {
-                            if yesNo == "yes" {
-                                self.user = User(name: self.nameLabel.text!)
-                                self.startGame()
-                            } else {
-                                self.say("Oh! Sorry! What's your name?")
-                                self.listeningFor = .Name
-                            }
-                        }
-                    
-                    }
-            }
-        })
+        if let task = recognitionTask {
+            task.cancel()
+            recognitionTask = nil
+            return
+        }
+        //recognitionTask?.cancel()//stopListening() // if there's already a task, cancel it
+        print("listening...")
+        setupSpeechRecogniser()
+        recognitionTask = speechRecogniser?.recognitionTask(with: recognitionRequest!, delegate: self)
         self.audioEngine.prepare()
         do {try self.audioEngine.start()} catch {}
         print("Go ahead, I'm listening")
     }
+ */
+    
+    func listen(for listeningFor: ListeningType) {
+        print("listening for : \(listeningFor)")
+        actionQueue.add {
+            self.recognitionTask = self.speechRecogniser?.recognitionTask(with: self.recognitionRequest!, resultHandler: { (result, error) in
+                guard result != nil else { return }
+                let transcription = result!.bestTranscription.formattedString
+                print("recognised speech : \(transcription)")
+                switch listeningFor {
+                case .Number:
+                    if let num = findNumbers(inString: transcription) {
+                        self.actionQueue.actionCompleted()
+                        self.answerInput.text = "\(num)"
+                        self.checkAnswer(num)
+                    }
+                case .Name:
+                    //self.listeningFor = .NameConfirmation
+                    self.actionQueue.actionCompleted()
+                    self.stopListening()
+                    self.nameLabel.text = getName(transcription: transcription)
+                    self.say("Is your name \(self.nameLabel.text!)")
+                    self.listen(for: .NameConfirmation)
+                case .NameConfirmation:
+                    if let yesNo = findYesNo(inString: transcription) {
+                        self.actionQueue.actionCompleted()
+                        self.stopListening()
+                        if yesNo == "yes" {
+                            self.user = User(name: self.nameLabel.text!)
+                            self.startGame()
+                        } else {
+                            self.say("Oh! Sorry! What's your name?")
+                            self.listen(for: .Name)//self.listeningFor = .Name
+                        }
+                    }
+                    
+                }
+            })
+            self.audioEngine.prepare()
+            do {try self.audioEngine.start()} catch { print("failed to start audio engine")}
+        }
+    }
+    
+    /*
+    func speechRecognitionTask(_ task: SFSpeechRecognitionTask, didHypothesizeTranscription transcription: SFTranscription) {
+        print("heard something")
+        guard task == recognitionTask else {
+            task.cancel()
+            return
+        }
+        print("acting on heard speech")
+        let speech = transcription.formattedString
+        print("recognised speech : \(speech)")
+        switch self.listeningFor {
+        case .Number:
+            if let num = findNumbers(inString: transcription.formattedString) {
+                self.answerInput.text = "\(num)"
+                self.checkAnswer(num)
+            }
+        case .Name:
+            self.listeningFor = .NameConfirmation
+            self.nameLabel.text = speech
+            self.say("Is your name \(transcription)?")
+        case .NameConfirmation:
+            if let yesNo = findYesNo(inString: speech) {
+                if yesNo == "yes" {
+                    self.user = User(name: self.nameLabel.text!)
+                    self.startGame()
+                } else {
+                    self.say("Oh! Sorry! What's your name?")
+                    self.listeningFor = .Name
+                }
+            }
+            
+        }
+    }
+ */
     
     func stopListening() {
         recognitionTask?.cancel()
@@ -271,17 +352,17 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
     
     var timeSet = Date()
     func setNewSum() {
-        self.listeningFor = .Number
+        //self.listeningFor = .Number
         meterSpeed = NormalMeterSpeed
         tickOrCross.image = nil
         answerInput.text = ""
         correctAnswer.text = ""
-        //sum = user.pickSum()
         sum = user.pickSum(level: level)
         speak(sum: sum)
         n1.text = "\(sum.n1)"
         n2.text = "\(sum.n2)"
         timeSet = Date()
+        listen(for: .Number)
     }
     
     func speak(sum: Sum) {
@@ -290,19 +371,22 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
     
     var sumToBeSet = false
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+        actionQueue.actionCompleted()
+        /*
+        if utterances.count == 0 { startListening() }
         if !paused {
             if sumToBeSet && utterances.count == 0 {
-                setNewSum()
                 sumToBeSet = false
+                setNewSum()
             }
             if utterances.count > 0 {
                 let utterance = utterances.popLast()!
                 speaker.speak(utterance)
-            } else {
-                startListening()
             }
         }
+ */
     }
+    
     
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
         stopListening()
@@ -314,22 +398,44 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
         utterance.pitchMultiplier = voicePitch
         utterance.rate = speechRate
         utterance.postUtteranceDelay = 0.15
+        actionQueue.add {
+            self.speaker.speak(utterance)
+        }
+        /*
         if speaker.isSpeaking {
             utterances.insert(utterance, at: 0)
         } else {
+            
             speaker.speak(utterance)
         }
+ */
     }
+    
+    /*
+    func say(_ words: String, completion: () -> ()) {
+        say(words)
+        completion
+    }
+ */
     
     //////////////////// Bits for Emma after here /////////////////////
     
     func checkAnswer(_ n: Int) {
+        sumsAnswered += 1
         stopListening()
         meterSpeed = SlowMeterSpeed
         let timeTaken = Date().timeIntervalSince(timeSet)
         let isCorrect = sum.submitAnswer(answer: n, timeTaken: timeTaken)
         print("\(isCorrect) answer submitted in time : \(timeTaken)")
         if isCorrect {
+            tickOrCross.image = #imageLiteral(resourceName: "tick")
+            meterPercent += meterBoost
+            score += 5 * level * (level + 1) // CHANGE THIS
+            if meterPercent >= 1.0 {
+                meterPercent = 1.0
+                levelUp()
+                return
+            }
             let rand = arc4random_uniform(15)
             switch rand {
             case 0:
@@ -339,7 +445,7 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
             case 2:
                 say("superstar")
             case 3:
-                say("great")
+                say("great job \(user.name)")
             case 4:
                 say("well done \(user.name), have a song.")
                 playMusic(name: "dance_song", length: 5)
@@ -387,15 +493,9 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
             default:
                 say("That's right. Well done \(user.name)!")
             }
-            tickOrCross.image = #imageLiteral(resourceName: "tick")
-            meterPercent += meterBoost
-            score += 10 // CHANGE THIS
-            if meterPercent >= 1.0 {
-                meterPercent = 1.0
-                levelUp()
-            }
+
         } else {
-            score -= 10 // CHANGE THIS
+            score -= 20 // CHANGE THIS
             let dice = arc4random_uniform(5)
             switch dice {
             case 0:
@@ -420,12 +520,8 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
 
         }
         
-        DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + (isCorrect ? 0.5 : 1.5)) {
-            if !self.speaker.isSpeaking {
-                self.setNewSum()
-            } else {
-                self.sumToBeSet = true
-            }
+        DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + (isCorrect ? 1.0 : 2.5)) {
+            self.setNewSum()
         }
     }
     
@@ -435,29 +531,28 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
         guard let url = Bundle.main.url(forResource: name, withExtension: "mp3") else { return }
         
         do {
-            try AVAudioSession.sharedInstance().setCategory(AVAudioSessionCategoryPlayback)
+            try AVAudioSession.sharedInstance().setCategory(AVAudioSessionCategoryPlayback) //WILL THIS INTERFERE WITH RECORD?
             try AVAudioSession.sharedInstance().setActive(true)
             
             /* The following line is required for the player to work on iOS 11. Change the file type accordingly*/
             player = try AVAudioPlayer(contentsOf: url, fileTypeHint: AVFileType.mp3.rawValue)
-            
             /* iOS 10 and earlier require the following line:
              player = try AVAudioPlayer(contentsOf: url, fileTypeHint: AVFileTypeMPEGLayer3) */
             guard let player = player else { return }
-            
-            player.play()
-            let deadline = DispatchTime.now() + length
-            DispatchQueue.main.asyncAfter(deadline: deadline, execute: {
-                player.stop()
-            })
-            
+            actionQueue.add {
+                player.play()
+                let deadline = DispatchTime.now() + length
+                DispatchQueue.main.asyncAfter(deadline: deadline, execute: {
+                    player.stop()
+                    self.actionQueue.actionCompleted()
+                })
+            }
         } catch let error {
             print(error.localizedDescription)
         }
     }
     
 }
-
 
 /////////////////////// other stuff ////////////////////////
 
@@ -474,6 +569,8 @@ fileprivate func findYesNo(inString str: String) -> String? {
     }
     return nil
 }
+
+
 
 fileprivate func findNumbers(inString str: String) -> Int? {
     let words = str.split(separator: " ")
@@ -525,5 +622,34 @@ fileprivate func findNumbers(inString str: String) -> Int? {
         }
     }
     return nil
+}
+
+fileprivate func getName(transcription: String) -> String {
+    let rand = arc4random_uniform(16)
+    if rand == 1 || rand == 2 { return getSillyName() }
+    if transcription.lowercased() == "anna" && rand < 13 {
+        return "Emma"
+    }
+    return transcription
+}
+
+fileprivate func getSillyName() -> String {
+    let rand = arc4random_uniform(5)
+    switch rand {
+    case 0:
+        return "Mr Tumble"
+    case 1:
+        return "Barnaby Bear"
+    case 2:
+        return "Wumplytoot"
+    case 3:
+        return "Pingu"
+    case 4:
+        return "Isadora Moon"
+    case 5:
+        return "Flibbertyjibbet"
+    default:
+        return "Wibble"
+    }
 }
 
