@@ -10,7 +10,7 @@ import UIKit
 import AVFoundation
 import Speech
 
-class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognitionTaskDelegate, AVSpeechSynthesizerDelegate {
+class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognitionTaskDelegate, AVSpeechSynthesizerDelegate, UITableViewDataSource, UITableViewDelegate {
 
     // key numbers
     let updateInterval = 0.025
@@ -24,6 +24,8 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
     var level = 1
     var score = 0
     
+    var meterPercent = 0.5
+    
     var meterSpeed = 1.0 / 50.0
     var voicePitch: Float = 1.0
     var speechRate: Float = 0.55
@@ -35,21 +37,7 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
         }
     }
     let actionQueue = ActionQueue()
-    /*
-    var paused = false {
-        didSet {
-            if paused {
-                stopListening()
-                recognitionRequest = nil
-                updating = false
-            } else {
-                setupSpeechRecogniser()
-                startListening()
-                updating = true
-            }
-        }
-    }
- */
+
     enum ListeningType {
         case Name
         case NameConfirmation
@@ -57,8 +45,8 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
     }
     var listeningFor = ListeningType.Name
     
-    var speechQueue = "" // are these both needed?
-    var utterances: [AVSpeechUtterance] = []
+    //var speechQueue = "" // are these both needed?
+    //var utterances: [AVSpeechUtterance] = []
     
     // objects
     var sum: Sum!
@@ -71,10 +59,10 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
     let audioSession = AVAudioSession.sharedInstance()
     let speaker = AVSpeechSynthesizer()
     
+    var highScores = HighScores.load()
+    
     // outlets
     @IBOutlet weak var modalView: UIView!
-    @IBOutlet weak var modalTitle: UILabel!
-    @IBOutlet weak var modalLabel2: UILabel!
     @IBOutlet weak var nameLabel: UILabel!
     
     @IBOutlet weak var n1: UILabel!
@@ -88,14 +76,24 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
 
     @IBOutlet weak var meterBox: UIView!
     @IBOutlet weak var meterHeight: NSLayoutConstraint!
-    var meterPercent = 0.5
+    
+    @IBOutlet weak var levelUpModalView: UIView!
+    @IBOutlet weak var levelUpLabel: UILabel!
+    
+    @IBOutlet weak var gameOverModalView: UIView!
+    @IBOutlet weak var highScoresTableView: UITableView! {
+        didSet {
+            highScoresTableView.dataSource = self
+            highScoresTableView.delegate = self
+        }
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         speaker.delegate = self
         configureAudioSession()
         requestAuthorisations()
-        
+
     }
     
     enum GameAction {
@@ -134,26 +132,53 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
         meterPercent -= meterSpeed * updateInterval
         if meterPercent <= 0.0 {
             paused = true
-            loseGame()
+            endGame()
         }
         meterHeight.constant =  (meterBox.bounds.height - 10.0) * CGFloat(meterPercent)
         scoreLabel.text = "\(score)"
         levelLabel.text = "\(level)"
     }
     
-    func loseGame() {
+    func endGame() {
         stopListening()
         actionQueue.actionCompleted()
+        highScores.scores.append(GameResult(name: user.name, score: score, levelReached: level))
+        highScores.save()
+        highScoresTableView.reloadData()
+        print("scores : \(highScores.orderedScores)")
         say("Game over")
-        modalView.backgroundColor = UIColor.blue
-        modalTitle.text = "Game Over"
-        modalLabel2.text = "Final Score:"
+        //gameOverModalView.backgroundColor = UIColor.blue
         nameLabel.text = "\(score)"
         UIView.animate(withDuration: 1.5, animations: {
-            self.modalView.alpha = 1.0
+            self.gameOverModalView.alpha = 1.0
         })
         say("Well done, you scored \(score)")
     }
+    
+    @IBAction func playAgain(_ sender: Any) {
+        resetUI()
+        modalView.alpha = 1.0
+        nameLabel.text = ""
+        level = 1
+        score = 0
+        UIView.animate(withDuration: 1.5, animations: {
+            self.gameOverModalView.alpha = 0.0
+        })
+        askName()
+    }
+    @IBAction func resetHighScores(_ sender: Any) {
+        let alert = UIAlertController(title: "Reset Scores", message: "Are you sure you want to reset the high scores?", preferredStyle: .alert)
+        let okAction = UIAlertAction(title: "OK", style: .destructive) { (action) in
+            HighScores.reset()
+            self.highScores = HighScores.load()
+            self.highScoresTableView.reloadData()
+        }
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
+        alert.addAction(okAction)
+        alert.addAction(cancelAction)
+        self.present(alert, animated: true, completion: nil)
+    }
+    
     
     func resetUI() {
         meterPercent = 0.5
@@ -163,27 +188,33 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
         answerInput.text = ""
     }
     
+    let playlist: [(name: String, ext: String)] =
+        [
+            (name: "dance_song", ext: "mp3"),
+         (name: "dance_song", ext: "mp3"),
+         (name: "house-loop", ext: "wav"),
+         (name: "dance_song", ext: "mp3"),
+         (name: "game_theme", ext: "wav"),
+         (name: "fast_dance", ext: "wav"),
+         (name: "other dance song", ext: "wav")
+         ]
     func levelUp() {
         paused = true
         level += 1
-        modalView.backgroundColor = UIColor.white
-        modalTitle.text = "Level \(level)"
-        modalLabel2.text = ""
-        nameLabel.text = ""
+        levelUpLabel.text = "Level \(level)"
         UIView.animate(withDuration: 1.0, animations: {
-            self.modalView.alpha = 1.0
+            self.levelUpModalView.alpha = 1.0
         }) { (success) in
             self.say("welcome to level \(self.level)")
             self.resetUI()
             let deadline = DispatchTime.now() + 2.0
             DispatchQueue.main.asyncAfter(deadline: deadline, execute: {
-                self.playMusic(name: "dance_song", length: 10.0)
+                self.playMusic(name: self.playlist[self.level].name, ext: self.playlist[self.level].ext, length: 10.0)
                 let deadline2 = DispatchTime.now() + 10.0
                 DispatchQueue.main.asyncAfter(deadline: deadline2, execute: {
                     UIView.animate(withDuration: 5.0, animations: {
-                        self.modalView.alpha = 0.0
+                        self.levelUpModalView.alpha = 0.0
                     }, completion: { (success) in
-                        
                         self.setNewSum()
                         self.paused = false
                     })
@@ -250,24 +281,6 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { (buffer: AVAudioPCMBuffer, when: AVAudioTime) in
             self.recognitionRequest!.append(buffer)}
     }
-    /*
-    func startListening() {
-        
-        print("starting listening")
-        if let task = recognitionTask {
-            task.cancel()
-            recognitionTask = nil
-            return
-        }
-        //recognitionTask?.cancel()//stopListening() // if there's already a task, cancel it
-        print("listening...")
-        setupSpeechRecogniser()
-        recognitionTask = speechRecogniser?.recognitionTask(with: recognitionRequest!, delegate: self)
-        self.audioEngine.prepare()
-        do {try self.audioEngine.start()} catch {}
-        print("Go ahead, I'm listening")
-    }
- */
     
     func listen(for listeningFor: ListeningType) {
         print("listening for : \(listeningFor)")
@@ -310,41 +323,6 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
         }
     }
     
-    /*
-    func speechRecognitionTask(_ task: SFSpeechRecognitionTask, didHypothesizeTranscription transcription: SFTranscription) {
-        print("heard something")
-        guard task == recognitionTask else {
-            task.cancel()
-            return
-        }
-        print("acting on heard speech")
-        let speech = transcription.formattedString
-        print("recognised speech : \(speech)")
-        switch self.listeningFor {
-        case .Number:
-            if let num = findNumbers(inString: transcription.formattedString) {
-                self.answerInput.text = "\(num)"
-                self.checkAnswer(num)
-            }
-        case .Name:
-            self.listeningFor = .NameConfirmation
-            self.nameLabel.text = speech
-            self.say("Is your name \(transcription)?")
-        case .NameConfirmation:
-            if let yesNo = findYesNo(inString: speech) {
-                if yesNo == "yes" {
-                    self.user = User(name: self.nameLabel.text!)
-                    self.startGame()
-                } else {
-                    self.say("Oh! Sorry! What's your name?")
-                    self.listeningFor = .Name
-                }
-            }
-            
-        }
-    }
- */
-    
     func stopListening() {
         recognitionTask?.cancel()
         audioEngine.stop()
@@ -352,7 +330,6 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
     
     var timeSet = Date()
     func setNewSum() {
-        //self.listeningFor = .Number
         meterSpeed = NormalMeterSpeed
         tickOrCross.image = nil
         answerInput.text = ""
@@ -372,21 +349,7 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
     var sumToBeSet = false
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
         actionQueue.actionCompleted()
-        /*
-        if utterances.count == 0 { startListening() }
-        if !paused {
-            if sumToBeSet && utterances.count == 0 {
-                sumToBeSet = false
-                setNewSum()
-            }
-            if utterances.count > 0 {
-                let utterance = utterances.popLast()!
-                speaker.speak(utterance)
-            }
-        }
- */
     }
-    
     
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didStart utterance: AVSpeechUtterance) {
         stopListening()
@@ -401,23 +364,8 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
         actionQueue.add {
             self.speaker.speak(utterance)
         }
-        /*
-        if speaker.isSpeaking {
-            utterances.insert(utterance, at: 0)
-        } else {
-            
-            speaker.speak(utterance)
-        }
- */
     }
-    
-    /*
-    func say(_ words: String, completion: () -> ()) {
-        say(words)
-        completion
-    }
- */
-    
+
     //////////////////// Bits for Emma after here /////////////////////
     
     func checkAnswer(_ n: Int) {
@@ -448,7 +396,7 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
                 say("great job \(user.name)")
             case 4:
                 say("well done \(user.name), have a song.")
-                playMusic(name: "dance_song", length: 5)
+                playMusic(name: "dance_song", ext: "mp3", length: 3)
             case 5, 6:
                 say("nice work \(user.name)")
             case 7:
@@ -520,19 +468,19 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
 
         }
         
-        DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + (isCorrect ? 1.0 : 2.5)) {
+        DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + (isCorrect ? 2.25 : 8.0)) {
             self.setNewSum()
         }
     }
     
     var player: AVAudioPlayer?
     
-    func playMusic(name: String, length: TimeInterval) {
-        guard let url = Bundle.main.url(forResource: name, withExtension: "mp3") else { return }
+    func playMusic(name: String, ext: String, length: TimeInterval) {
+        guard let url = Bundle.main.url(forResource: name, withExtension: ext) else { return }
         
         do {
-            try AVAudioSession.sharedInstance().setCategory(AVAudioSessionCategoryPlayback) //WILL THIS INTERFERE WITH RECORD?
-            try AVAudioSession.sharedInstance().setActive(true)
+            //try audioSession.setCategory(AVAudioSessionCategoryPlayback) //WILL THIS INTERFERE WITH RECORD?
+            try audioSession.setActive(true)
             
             /* The following line is required for the player to work on iOS 11. Change the file type accordingly*/
             player = try AVAudioPlayer(contentsOf: url, fileTypeHint: AVFileType.mp3.rawValue)
@@ -552,6 +500,38 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
         }
     }
     
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return highScores.orderedScores.count + 1
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 50.0
+    }
+    
+    func numberOfSections(in tableView: UITableView) -> Int {
+        return 1
+    }
+    
+    var rankReached = 3
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        guard indexPath.row > 0 else {
+            return tableView.dequeueReusableCell(withIdentifier: "highScoresHeaderCell")!
+        }
+        let cell = tableView.dequeueReusableCell(withIdentifier: "highScoresCell") as! HighScoresTableViewCell
+        let row = indexPath.row - 1
+        let thisScore = highScores.orderedScores[row]
+        cell.nameLabel.text = thisScore.name
+        cell.levelLabel.text = "\(thisScore.levelReached)"
+        cell.scoreLabel.text = "\(thisScore.score)"
+        for medal in cell.medals {
+            medal.alpha = (row == 0) ? 1.0 : 0.0
+        }
+        for arrow in cell.arrows {
+            arrow.alpha = (user != nil && thisScore.name == user.name && thisScore.score == score && thisScore.levelReached == level) ? 1.0 : 0.0
+        }
+    return cell
+    }
+    
 }
 
 /////////////////////// other stuff ////////////////////////
@@ -564,7 +544,7 @@ fileprivate func findYesNo(inString str: String) -> String? {
             return "yes"
         case "no":
             return "no"
-        default: return nil
+        default: continue
         }
     }
     return nil
@@ -580,19 +560,19 @@ fileprivate func findNumbers(inString str: String) -> Int? {
             return 11
         case "12", "twelve":
             return 12
-        case "13", "thirteen":
+        case "13", "thirteen", "30":
             return 13
-        case "14", "fourteen":
+        case "14", "fourteen", "40":
             return 14
-        case "15", "fifteen":
+        case "15", "fifteen", "50":
             return 15
-        case "16", "sixteen":
+        case "16", "sixteen", "60":
             return 16
-        case "17", "seventeen":
+        case "17", "seventeen", "70":
             return 17
-        case "18", "eighteen":
+        case "18", "eighteen", "80":
             return 18
-        case "19", "nineteen":
+        case "19", "nineteen", "90":
             return 19
         case "20", "twenty":
             return 20
@@ -606,7 +586,7 @@ fileprivate func findNumbers(inString str: String) -> Int? {
             return 3
         case "4", "four", "for":
             return 4
-        case "5", "five":
+        case "5", "five", "fine", "fight":
             return 5
         case "6", "six", "sex":
             return 6
