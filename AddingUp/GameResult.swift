@@ -8,9 +8,6 @@
 
 import Foundation
 
-
-
-
 struct HighScores: Codable {
     /*
  // singleton
@@ -44,12 +41,16 @@ struct HighScores: Codable {
             }
         } else {
             // create dummy entries for new table
-            scores.scores.append(GameResult(name: "Harry", score: 3000, levelReached: 5))
-            scores.scores.append(GameResult(name: "Gemma", score: 2000, levelReached: 4))
-            scores.scores.append(GameResult(name: "Lacey", score: 1500, levelReached: 4))
-            scores.scores.append(GameResult(name: "Adele", score: 1000, levelReached: 3))
-            scores.scores.append(GameResult(name: "Eliza", score: 500, levelReached: 2))
-            scores.scores.append(GameResult(name: "Lyra", score: 50, levelReached: 1))
+            scores.scores.append(GameResult(name: "Madame Gazelle", score: 3000, levelReached: 5))
+            scores.scores.append(GameResult(name: "Mummy Pig", score: 2250, levelReached: 5))
+            scores.scores.append(GameResult(name: "Daddy Pig", score: 1750, levelReached: 4))
+            scores.scores.append(GameResult(name: "Richard Rabbit", score: 1300, levelReached: 4))
+            scores.scores.append(GameResult(name: "Peppa", score: 1000, levelReached: 3))
+            scores.scores.append(GameResult(name: "Pedro Pony", score: 750, levelReached: 3))
+            scores.scores.append(GameResult(name: "Candy Cat", score: 500, levelReached: 3))
+            scores.scores.append(GameResult(name: "Suzy Sheep", score: 300, levelReached: 2))
+            scores.scores.append(GameResult(name: "Danny Dog", score: 100, levelReached: 2))
+            scores.scores.append(GameResult(name: "George", score: 50, levelReached: 1))
         }
         return scores
     }

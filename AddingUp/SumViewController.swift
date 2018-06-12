@@ -17,7 +17,7 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
     let meterBoost = 0.2
     var sumsAnswered = 0
     var NormalMeterSpeed: Double {
-        return 0.02 + Double(sumsAnswered) * 0.00025
+        return 0.02 + Double(sumsAnswered) * 0.0004
     }
     let SlowMeterSpeed = 0.001
     
@@ -41,7 +41,8 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
     enum ListeningType {
         case Name
         case NameConfirmation
-        case Number
+        case Answer
+        case Level
     }
     var listeningFor = ListeningType.Name
     
@@ -96,18 +97,6 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
 
     }
     
-    enum GameAction {
-        case AskName
-        case ListenForName
-        case ConfirmName
-        case ListenForConfirmation
-        case SetSum
-        case ListenForAnswer
-        case CheckAnswer
-        case GameOver
-        case LevelUp
-    }
-    var nextAction = (GameAction.AskName,"")
     var readyForNextAction = true
     
     func askName() {
@@ -126,6 +115,12 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
             //self.sumToBeSet = true
             self.paused = false
         }
+    }
+    
+    func askLevel() {
+        say("Hello \(user.name)")
+        say("what level would you like to start on?")
+        listen(for: .Level)
     }
 
     func update() {
@@ -147,7 +142,6 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
         highScoresTableView.reloadData()
         print("scores : \(highScores.orderedScores)")
         say("Game over")
-        //gameOverModalView.backgroundColor = UIColor.blue
         nameLabel.text = "\(score)"
         UIView.animate(withDuration: 1.5, animations: {
             self.gameOverModalView.alpha = 1.0
@@ -157,10 +151,12 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
     
     @IBAction func playAgain(_ sender: Any) {
         resetUI()
+        picturePlace.image = nil
         modalView.alpha = 1.0
         nameLabel.text = ""
         level = 1
         score = 0
+        sumsAnswered = 0
         UIView.animate(withDuration: 1.5, animations: {
             self.gameOverModalView.alpha = 0.0
         })
@@ -181,7 +177,7 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
     
     
     func resetUI() {
-        meterPercent = 0.5
+        meterPercent = 0.65 - Double(level) * 0.05//0.5
         n1.text = ""
         n2.text = ""
         tickOrCross.image = nil
@@ -192,10 +188,12 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
         [
             (name: "dance_song", ext: "mp3"),
          (name: "dance_song", ext: "mp3"),
-         (name: "house-loop", ext: "wav"),
+         (name: "retro dance theme", ext: "wav"),
+         (name: "fast_dance", ext: "wav"),
+         (name: "90s pop", ext: "wav"),
          (name: "dance_song", ext: "mp3"),
          (name: "game_theme", ext: "wav"),
-         (name: "fast_dance", ext: "wav"),
+         (name: "house-loop", ext: "wav"),
          (name: "other dance song", ext: "wav")
          ]
     func levelUp() {
@@ -209,10 +207,10 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
             self.resetUI()
             let deadline = DispatchTime.now() + 2.0
             DispatchQueue.main.asyncAfter(deadline: deadline, execute: {
-                self.playMusic(name: self.playlist[self.level].name, ext: self.playlist[self.level].ext, length: 10.0)
-                let deadline2 = DispatchTime.now() + 10.0
+                self.playMusic(name: self.playlist[self.level].name, ext: self.playlist[self.level].ext, length: 15.0)
+                let deadline2 = DispatchTime.now() + 14.0
                 DispatchQueue.main.asyncAfter(deadline: deadline2, execute: {
-                    UIView.animate(withDuration: 5.0, animations: {
+                    UIView.animate(withDuration: 3.0, animations: {
                         self.levelUpModalView.alpha = 0.0
                     }, completion: { (success) in
                         self.setNewSum()
@@ -290,7 +288,16 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
                 let transcription = result!.bestTranscription.formattedString
                 print("recognised speech : \(transcription)")
                 switch listeningFor {
-                case .Number:
+                case .Level:
+                    if let num = findNumbers(inString: transcription) {
+                        if num <= 5 {
+                            self.actionQueue.actionCompleted()
+                            self.level = num
+                            self.say("ok, let's start on level \(self.level)")
+                            self.startGame()
+                        }
+                    }
+                case .Answer:
                     if let num = findNumbers(inString: transcription) {
                         self.actionQueue.actionCompleted()
                         self.answerInput.text = "\(num)"
@@ -309,7 +316,7 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
                         self.stopListening()
                         if yesNo == "yes" {
                             self.user = User(name: self.nameLabel.text!)
-                            self.startGame()
+                            self.askLevel()
                         } else {
                             self.say("Oh! Sorry! What's your name?")
                             self.listen(for: .Name)//self.listeningFor = .Name
@@ -339,7 +346,7 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
         n1.text = "\(sum.n1)"
         n2.text = "\(sum.n2)"
         timeSet = Date()
-        listen(for: .Number)
+        listen(for: .Answer)
     }
     
     func speak(sum: Sum) {
@@ -392,20 +399,13 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
                 say("Well done, you're a superstar \(user.name)!")
             case 2:
                 say("superstar")
-            case 3:
+            case 3,4:
                 say("great job \(user.name)")
-            case 4:
+            case 5:
                 say("well done \(user.name), have a song.")
                 playMusic(name: "dance_song", ext: "mp3", length: 3)
-            case 5, 6:
+            case 6, 7:
                 say("nice work \(user.name)")
-            case 7:
-                say("that's right \(user.name), let's change the colour")
-                let red = CGFloat(arc4random())/CGFloat(UINT32_MAX)
-                let green = CGFloat(arc4random())/CGFloat(UINT32_MAX)
-                let blue = CGFloat(arc4random())/CGFloat(UINT32_MAX)
-                let colour = UIColor(red: red, green: green, blue: blue, alpha: 1.0)
-                view.backgroundColor = colour
             case 8,9:
                 if (picturePlace.image == nil || picturePlace.image == #imageLiteral(resourceName: "sad_cloud")) {
                     say("fantastic! Have a clown")
@@ -505,7 +505,7 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 50.0
+        return highScoresTableView.bounds.height / 11.0//30.0 * getFontScalingForScreenSize()
     }
     
     func numberOfSections(in tableView: UITableView) -> Int {
@@ -531,7 +531,6 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
         }
     return cell
     }
-    
 }
 
 /////////////////////// other stuff ////////////////////////
@@ -540,9 +539,9 @@ fileprivate func findYesNo(inString str: String) -> String? {
     let words = str.split(separator: " ")
     for word in words {
         switch word.lowercased() {
-        case "yes":
+        case "yes", "yeah", "sure":
             return "yes"
-        case "no":
+        case "no", "na", "nah":
             return "no"
         default: continue
         }
@@ -606,30 +605,24 @@ fileprivate func findNumbers(inString str: String) -> Int? {
 
 fileprivate func getName(transcription: String) -> String {
     let rand = arc4random_uniform(16)
-    if rand == 1 || rand == 2 { return getSillyName() }
+    if rand <= 3 { return getSillyName() }
     if transcription.lowercased() == "anna" && rand < 13 {
         return "Emma"
     }
     return transcription
 }
 
+fileprivate var sillyNames: [String] = [
+    "Pingu",
+    "Isadora Moon",
+    "Shopkin",
+    "Sweetie",
+    "Giraffes",
+    "",
+]
+
 fileprivate func getSillyName() -> String {
-    let rand = arc4random_uniform(5)
-    switch rand {
-    case 0:
-        return "Mr Tumble"
-    case 1:
-        return "Barnaby Bear"
-    case 2:
-        return "Wumplytoot"
-    case 3:
-        return "Pingu"
-    case 4:
-        return "Isadora Moon"
-    case 5:
-        return "Flibbertyjibbet"
-    default:
-        return "Wibble"
-    }
+    let rand = Int(arc4random_uniform(UInt32(sillyNames.count) - 1))
+    return sillyNames[rand]
 }
 
