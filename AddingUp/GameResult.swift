@@ -14,11 +14,20 @@ struct HighScores: Codable {
     static let shared = load()
     private init() {}
     */
-    static let key = "high scores"
-    var scores: [GameResult] = []
     
-    var orderedScores: [GameResult] {
-        return scores.sorted(){$0.score > $1.score}
+    static let key = "high scores v4"
+    
+    var additionScores: [GameResult] = []
+    var subtractionScores: [GameResult] = []
+    
+    func getOrderedScores(mode: User.Mode) -> [GameResult] {
+        switch mode {
+        case .Addition:
+            return additionScores.sorted(){$0.score > $1.score}
+        case .Subtraction:
+            return subtractionScores.sorted(){$0.score > $1.score}
+        }
+        
     }
     
     func save() {
@@ -41,16 +50,29 @@ struct HighScores: Codable {
             }
         } else {
             // create dummy entries for new table
-            scores.scores.append(GameResult(name: "Madame Gazelle", score: 3000, levelReached: 5))
-            scores.scores.append(GameResult(name: "Mummy Pig", score: 2250, levelReached: 5))
-            scores.scores.append(GameResult(name: "Daddy Pig", score: 1750, levelReached: 4))
-            scores.scores.append(GameResult(name: "Richard Rabbit", score: 1300, levelReached: 4))
-            scores.scores.append(GameResult(name: "Peppa", score: 1000, levelReached: 3))
-            scores.scores.append(GameResult(name: "Pedro Pony", score: 750, levelReached: 3))
-            scores.scores.append(GameResult(name: "Candy Cat", score: 500, levelReached: 3))
-            scores.scores.append(GameResult(name: "Suzy Sheep", score: 300, levelReached: 2))
-            scores.scores.append(GameResult(name: "Danny Dog", score: 100, levelReached: 2))
-            scores.scores.append(GameResult(name: "George", score: 50, levelReached: 1))
+            // reminder of level rewards : let levelRewards = [10, 15, 25, 50, 100, 150, 200]
+            
+            scores.additionScores.append(GameResult(name: "Madame Gazelle", score: 500, levelReached: 6))
+            scores.additionScores.append(GameResult(name: "Mummy Pig", score: 400, levelReached: 6))
+            scores.additionScores.append(GameResult(name: "Daddy Pig", score: 250, levelReached: 5))
+            scores.additionScores.append(GameResult(name: "Richard Rabbit", score: 200, levelReached: 5))
+            scores.additionScores.append(GameResult(name: "Peppa", score: 150, levelReached: 4))
+            scores.additionScores.append(GameResult(name: "Pedro Pony", score: 100, levelReached: 4))
+            scores.additionScores.append(GameResult(name: "Candy Cat", score: 60, levelReached: 3))
+            scores.additionScores.append(GameResult(name: "Suzy Sheep", score: 45, levelReached: 3))
+            scores.additionScores.append(GameResult(name: "Danny Dog", score: 25, levelReached: 2))
+            scores.additionScores.append(GameResult(name: "George", score: 5, levelReached: 1))
+            
+            scores.subtractionScores.append(GameResult(name: "Madame Gazelle", score: 400, levelReached: 6))
+            scores.subtractionScores.append(GameResult(name: "Mummy Pig", score: 250, levelReached: 5))
+            scores.subtractionScores.append(GameResult(name: "Daddy Pig", score: 200, levelReached: 5))
+            scores.subtractionScores.append(GameResult(name: "Richard Rabbit", score: 150, levelReached: 4))
+            scores.subtractionScores.append(GameResult(name: "Peppa", score: 100, levelReached: 4))
+            scores.subtractionScores.append(GameResult(name: "Pedro Pony", score: 60, levelReached: 3))
+            scores.subtractionScores.append(GameResult(name: "Candy Cat", score: 45, levelReached: 3))
+            scores.subtractionScores.append(GameResult(name: "Suzy Sheep", score: 25, levelReached: 2))
+            scores.subtractionScores.append(GameResult(name: "Danny Dog", score: 10, levelReached: 1))
+            scores.subtractionScores.append(GameResult(name: "George", score: 5, levelReached: 1))
         }
         return scores
     }

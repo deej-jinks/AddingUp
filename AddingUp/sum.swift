@@ -28,12 +28,18 @@ class Sum {
         self.op = op
     }
     
+    var verbalDescription: String {
+        let opString = op == "+" ? "plus" : "take away"
+        return "\(n1) " + opString + " \(n2)"
+    }
+    
     public func submitAnswer(answer: Int, timeTaken: TimeInterval) -> Bool {
         let isCorrect = (answer == self.answer)
         history.append((correct: isCorrect, time: timeTaken))
         return isCorrect
     }
     
+    /*
     public func hasLearned() -> LearnedStatus {
         guard history.count >= 2 else { return .NotTriedEnough }
         var numAnswers = 0
@@ -52,8 +58,9 @@ class Sum {
             return .GettingRightButSlow
         }
     }
+ */
     
-    //
+    /*
     public func getBaseDifficulty() -> Int {
         guard op == "+" else { return 1000 }
         var diff = max(n1 + n2 - 5, 1) // bigger nos are harder
@@ -65,6 +72,7 @@ class Sum {
         }
         return diff
     }
+ */
     
     
     public var answer: Int {

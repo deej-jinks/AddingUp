@@ -10,17 +10,21 @@ import UIKit
 import AVFoundation
 import Speech
 
-class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognitionTaskDelegate, AVSpeechSynthesizerDelegate, UITableViewDataSource, UITableViewDelegate {
+class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognitionTaskDelegate, AVSpeechSynthesizerDelegate, UITableViewDataSource, UITableViewDelegate, MultipleDigitRecognitonViewDelegate {
+
+    
 
     // key numbers
     let updateInterval = 0.025
     let meterBoost = 0.2
     var sumsAnswered = 0
+    var levelsCompleted = 0
     var NormalMeterSpeed: Double {
-        return 0.02 + Double(sumsAnswered) * 0.0004
+        return 0.021 + Double(sumsAnswered - levelsCompleted * 4) * 0.0004
     }
     let SlowMeterSpeed = 0.001
     
+    var mode = User.Mode.Addition
     var level = 1
     var score = 0
     
@@ -41,8 +45,9 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
     enum ListeningType {
         case Name
         case NameConfirmation
-        case Answer
+        case Mode
         case Level
+        case Answer
     }
     var listeningFor = ListeningType.Name
     
@@ -67,14 +72,21 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
     @IBOutlet weak var nameLabel: UILabel!
     
     @IBOutlet weak var n1: UILabel!
+    @IBOutlet weak var op: UILabel!
     @IBOutlet weak var n2: UILabel!
     @IBOutlet weak var answerInput: UILabel!
     @IBOutlet weak var correctAnswer: UILabel!
     @IBOutlet weak var tickOrCross: UIImageView!
     @IBOutlet weak var picturePlace: UIImageView!
+    @IBOutlet weak var readOut: UILabel!
     @IBOutlet weak var scoreLabel: UILabel!
     @IBOutlet weak var levelLabel: UILabel!
 
+    @IBOutlet weak var writingArea: MultipleDigitRecognitionView! {
+        didSet {
+            writingArea.delegate = self
+        }
+    }
     @IBOutlet weak var meterBox: UIView!
     @IBOutlet weak var meterHeight: NSLayoutConstraint!
     
@@ -82,6 +94,7 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
     @IBOutlet weak var levelUpLabel: UILabel!
     
     @IBOutlet weak var gameOverModalView: UIView!
+    @IBOutlet weak var highScoresTitle: UILabel!
     @IBOutlet weak var highScoresTableView: UITableView! {
         didSet {
             highScoresTableView.dataSource = self
@@ -100,7 +113,7 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
     var readyForNextAction = true
     
     func askName() {
-        say("Welcome to Emma's Adding Up Game")
+        say("Welcome to Emma's Sums")
         say("What's your name?")
         listen(for: .Name)
     }
@@ -118,9 +131,14 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
     }
     
     func askLevel() {
-        say("Hello \(user.name)")
-        say("what level would you like to start on?")
+        say("ok - what level would you like to start on?")
         listen(for: .Level)
+    }
+    
+    func askMode() {
+        say("Hello \(user.name)")
+        say("would you like to do adding up or take aways?")
+        listen(for: .Mode)
     }
 
     func update() {
@@ -135,12 +153,20 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
     }
     
     func endGame() {
+        
         stopListening()
         actionQueue.actionCompleted()
-        highScores.scores.append(GameResult(name: user.name, score: score, levelReached: level))
+        switch mode {
+        case .Addition:
+            highScoresTitle.text = "Adding Up Scores"
+            highScores.additionScores.append(GameResult(name: user.name, score: score, levelReached: level))
+        case .Subtraction:
+            highScoresTitle.text = "Taking Away Scores"
+            highScores.subtractionScores.append(GameResult(name: user.name, score: score, levelReached: level))
+        }
         highScores.save()
         highScoresTableView.reloadData()
-        print("scores : \(highScores.orderedScores)")
+        print("scores : \(highScores.getOrderedScores(mode: mode))")
         say("Game over")
         nameLabel.text = "\(score)"
         UIView.animate(withDuration: 1.5, animations: {
@@ -157,6 +183,7 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
         level = 1
         score = 0
         sumsAnswered = 0
+        levelsCompleted = 0
         UIView.animate(withDuration: 1.5, animations: {
             self.gameOverModalView.alpha = 0.0
         })
@@ -196,9 +223,13 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
          (name: "house-loop", ext: "wav"),
          (name: "other dance song", ext: "wav")
          ]
+    let levelRewards = [10, 15, 25, 50, 100, 150, 200]
     func levelUp() {
         paused = true
+        score += levelRewards[level]//Int(5 * pow(2.0, Double(level))) // ->2 == 10, 20, 40, 80, 160 == ->6
         level += 1
+        levelsCompleted += 1
+        
         levelUpLabel.text = "Level \(level)"
         UIView.animate(withDuration: 1.0, animations: {
             self.levelUpModalView.alpha = 1.0
@@ -233,9 +264,10 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
     
     func configureAudioSession() {
         do {
-            try self.audioSession.setCategory(AVAudioSessionCategoryPlayAndRecord)
+            try self.audioSession.setCategory(AVAudioSessionCategoryPlayAndRecord, with: AVAudioSessionCategoryOptions.defaultToSpeaker)
             try self.audioSession.setMode(AVAudioSessionModeMeasurement)
             try self.audioSession.setActive(true, with: .notifyOthersOnDeactivation)
+            try self.audioSession.setCategory(AVAudioSessionCategoryPlayAndRecord, with: AVAudioSessionCategoryOptions.defaultToSpeaker)
         } catch {print("error 583DPJ")}
     }
     
@@ -287,10 +319,11 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
                 guard result != nil else { return }
                 let transcription = result!.bestTranscription.formattedString
                 print("recognised speech : \(transcription)")
+                self.readOut.text = transcription
                 switch listeningFor {
                 case .Level:
                     if let num = findNumbers(inString: transcription) {
-                        if num <= 5 {
+                        if num <= 7 {
                             self.actionQueue.actionCompleted()
                             self.level = num
                             self.say("ok, let's start on level \(self.level)")
@@ -316,18 +349,31 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
                         self.stopListening()
                         if yesNo == "yes" {
                             self.user = User(name: self.nameLabel.text!)
-                            self.askLevel()
+                            self.askMode()//self.askLevel()
                         } else {
                             self.say("Oh! Sorry! What's your name?")
                             self.listen(for: .Name)//self.listeningFor = .Name
                         }
                     }
-                    
+                case .Mode:
+                    if let mode = findMode(inString: transcription) {
+                        self.actionQueue.actionCompleted()
+                        self.stopListening()
+                        self.mode = mode
+                        self.askLevel()
+                    }
                 }
             })
             self.audioEngine.prepare()
             do {try self.audioEngine.start()} catch { print("failed to start audio engine")}
         }
+    }
+    
+    func found(number: Int, sender: MultipleDigitRecognitionView) {
+        print("found written number: \(number)")
+        self.actionQueue.actionCompleted()
+        self.answerInput.text = "\(number)"
+        self.checkAnswer(number)
     }
     
     func stopListening() {
@@ -341,16 +387,17 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
         tickOrCross.image = nil
         answerInput.text = ""
         correctAnswer.text = ""
-        sum = user.pickSum(level: level)
+        sum = user.pickSum(level: level, mode: mode)
         speak(sum: sum)
         n1.text = "\(sum.n1)"
+        op.text = sum.op
         n2.text = "\(sum.n2)"
         timeSet = Date()
         listen(for: .Answer)
     }
     
     func speak(sum: Sum) {
-        say(" \(sum.n1) \(sum.op) \(sum.n2)")
+        say(sum.verbalDescription)
     }
     
     var sumToBeSet = false
@@ -368,6 +415,7 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
         utterance.pitchMultiplier = voicePitch
         utterance.rate = speechRate
         utterance.postUtteranceDelay = 0.15
+        utterance.volume = 1.0
         actionQueue.add {
             self.speaker.speak(utterance)
         }
@@ -385,7 +433,7 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
         if isCorrect {
             tickOrCross.image = #imageLiteral(resourceName: "tick")
             meterPercent += meterBoost
-            score += 5 * level * (level + 1) // CHANGE THIS
+            score += level // CHANGE THIS
             if meterPercent >= 1.0 {
                 meterPercent = 1.0
                 levelUp()
@@ -443,7 +491,7 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
             }
 
         } else {
-            score -= 20 // CHANGE THIS
+            score -= level // CHANGE THIS
             let dice = arc4random_uniform(5)
             switch dice {
             case 0:
@@ -501,7 +549,7 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return highScores.orderedScores.count + 1
+        return highScores.getOrderedScores(mode: mode).count + 1
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
@@ -519,7 +567,7 @@ class SumViewController: UIViewController, UITextFieldDelegate, SFSpeechRecognit
         }
         let cell = tableView.dequeueReusableCell(withIdentifier: "highScoresCell") as! HighScoresTableViewCell
         let row = indexPath.row - 1
-        let thisScore = highScores.orderedScores[row]
+        let thisScore = highScores.getOrderedScores(mode: mode)[row]
         cell.nameLabel.text = thisScore.name
         cell.levelLabel.text = "\(thisScore.levelReached)"
         cell.scoreLabel.text = "\(thisScore.score)"
@@ -549,7 +597,19 @@ fileprivate func findYesNo(inString str: String) -> String? {
     return nil
 }
 
-
+fileprivate func findMode(inString str: String) -> User.Mode? {
+    let words = str.split(separator: " ")
+    for word in words {
+        switch word.lowercased() {
+        case "adding", "add", "up", "addition", "plus":
+            return .Addition
+        case "take", "taking", "away", "subtraction", "minus":
+            return .Subtraction
+        default: continue
+        }
+    }
+    return nil
+}
 
 fileprivate func findNumbers(inString str: String) -> Int? {
     let words = str.split(separator: " ")
@@ -559,22 +619,42 @@ fileprivate func findNumbers(inString str: String) -> Int? {
             return 11
         case "12", "twelve":
             return 12
-        case "13", "thirteen", "30":
+        case "13", "thirteen":
             return 13
-        case "14", "fourteen", "40":
+        case "14", "fourteen":
             return 14
-        case "15", "fifteen", "50":
+        case "15", "fifteen":
             return 15
-        case "16", "sixteen", "60":
+        case "16", "sixteen":
             return 16
-        case "17", "seventeen", "70":
+        case "17", "seventeen":
             return 17
-        case "18", "eighteen", "80":
+        case "18", "eighteen":
             return 18
-        case "19", "nineteen", "90":
+        case "19", "nineteen":
             return 19
         case "20", "twenty":
             return 20
+        case "21", "twenty one":
+            return 21
+        case "22", "twenty two":
+            return 22
+        case "23", "twenty three":
+            return 23
+        case "24", "twenty four":
+            return 24
+        case "25", "twenty five":
+            return 25
+        case "26", "twenty six":
+            return 26
+        case "27", "twenty seven":
+            return 27
+        case "28", "twenty eight":
+            return 28
+        case "29", "twenty nine":
+            return 29
+        case "30", "thirty":
+            return 30
         case "0", "zero":
             return 0
         case "1", "one":
@@ -597,6 +677,7 @@ fileprivate func findNumbers(inString str: String) -> Int? {
             return 9
         case "10", "ten":
             return 10
+
         default: continue
         }
     }

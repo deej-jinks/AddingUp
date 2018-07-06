@@ -20,7 +20,7 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <imageView userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="blackboard" translatesAutoresizingMaskIntoConstraints="NO" id="RRU-Xt-yVf">
-                                <rect key="frame" x="47" y="107.5" width="281" height="300.5"/>
+                                <rect key="frame" x="47" y="56" width="281" height="300.5"/>
                             </imageView>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="5pt-tc-QNL" userLabel="HUD">
                                 <rect key="frame" x="18" y="18" width="337.5" height="46.5"/>
@@ -82,7 +82,7 @@
                                 </constraints>
                             </view>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="3QZ-94-XVg" userLabel="SumContainer">
-                                <rect key="frame" x="75" y="187" width="225" height="90"/>
+                                <rect key="frame" x="75" y="140.5" width="225" height="90"/>
                                 <subviews>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" minimumScaleFactor="0.5" translatesAutoresizingMaskIntoConstraints="NO" id="uL9-f2-cnp">
                                         <rect key="frame" x="0.0" y="0.0" width="29.5" height="90"/>
@@ -190,8 +190,18 @@
                                 </userDefinedRuntimeAttributes>
                             </view>
                             <imageView userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="1Oc-Om-fso">
-                                <rect key="frame" x="47" y="398.5" width="281" height="233.5"/>
+                                <rect key="frame" x="47" y="491.5" width="281" height="133.5"/>
                             </imageView>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Hqc-Vy-m2g" customClass="MultipleDigitRecognitionView" customModule="AddingUp" customModuleProvider="target">
+                                <rect key="frame" x="56.5" y="312" width="262.5" height="166.5"/>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                            </view>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Kii-MN-R30">
+                                <rect key="frame" x="37" y="609" width="300" height="53"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="12"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="gyg-P7-edv">
                                 <rect key="frame" x="9.5" y="110" width="37.5" height="467"/>
                                 <subviews>
@@ -216,7 +226,7 @@
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="eij-kI-Nsn" userLabel="TitleLabel">
                                         <rect key="frame" x="19" y="133.5" width="337.5" height="200"/>
                                         <string key="text">Welcome to Emma's
-Adding Up Game</string>
+Sums</string>
                                         <fontDescription key="fontDescription" type="boldSystem" pointSize="30"/>
                                         <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         <nil key="highlightedColor"/>
@@ -289,7 +299,7 @@ Adding Up Game</string>
                                 <subviews>
                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="High Scores" textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="cYH-g2-Z1E" userLabel="TitleLabel">
                                         <rect key="frame" x="94" y="50" width="187.5" height="66.5"/>
-                                        <fontDescription key="fontDescription" type="boldSystem" pointSize="30"/>
+                                        <fontDescription key="fontDescription" type="boldSystem" pointSize="24"/>
                                         <nil key="highlightedColor"/>
                                         <userDefinedRuntimeAttributes>
                                             <userDefinedRuntimeAttribute type="boolean" keyPath="adjustFontToRealIPhoneSize" value="YES"/>
@@ -569,34 +579,42 @@ Adding Up Game</string>
                         <constraints>
                             <constraint firstItem="gyg-P7-edv" firstAttribute="height" secondItem="8bC-Xf-vdC" secondAttribute="height" multiplier="0.7" id="1da-8u-OFu"/>
                             <constraint firstItem="3QZ-94-XVg" firstAttribute="width" secondItem="RRU-Xt-yVf" secondAttribute="width" multiplier="0.8" id="2tY-hp-L7c"/>
+                            <constraint firstItem="Hqc-Vy-m2g" firstAttribute="width" secondItem="8bC-Xf-vdC" secondAttribute="width" multiplier="0.7" id="5x0-mb-ZWz"/>
                             <constraint firstItem="Aj1-TM-N3e" firstAttribute="width" secondItem="8bC-Xf-vdC" secondAttribute="width" id="6R8-uV-trR"/>
                             <constraint firstItem="RRU-Xt-yVf" firstAttribute="width" secondItem="8bC-Xf-vdC" secondAttribute="width" multiplier="0.75" id="6gZ-6R-0T2"/>
+                            <constraint firstItem="Kii-MN-R30" firstAttribute="centerX" secondItem="6Tk-OE-BBY" secondAttribute="centerX" id="7gd-gO-qPd"/>
                             <constraint firstItem="gyg-P7-edv" firstAttribute="centerY" secondItem="6Tk-OE-BBY" secondAttribute="centerY" id="8HR-mE-bnu"/>
                             <constraint firstItem="1Oc-Om-fso" firstAttribute="centerX" secondItem="6Tk-OE-BBY" secondAttribute="centerX" id="8mx-Gw-FiR"/>
                             <constraint firstItem="9Qp-cn-t4h" firstAttribute="centerX" secondItem="6Tk-OE-BBY" secondAttribute="centerX" id="EA2-ko-i1e"/>
+                            <constraint firstItem="Hqc-Vy-m2g" firstAttribute="centerX" secondItem="6Tk-OE-BBY" secondAttribute="centerX" id="IKs-d8-hBE"/>
                             <constraint firstItem="9Qp-cn-t4h" firstAttribute="height" secondItem="8bC-Xf-vdC" secondAttribute="height" id="KBl-7r-t49"/>
                             <constraint firstItem="Aj1-TM-N3e" firstAttribute="height" secondItem="8bC-Xf-vdC" secondAttribute="height" id="LwD-kt-m0u"/>
-                            <constraint firstItem="RRU-Xt-yVf" firstAttribute="centerY" secondItem="6Tk-OE-BBY" secondAttribute="centerY" multiplier="0.75" id="LxH-UZ-7nn"/>
+                            <constraint firstItem="RRU-Xt-yVf" firstAttribute="centerY" secondItem="6Tk-OE-BBY" secondAttribute="centerY" multiplier="0.6" id="LxH-UZ-7nn"/>
                             <constraint firstItem="RcQ-rG-88K" firstAttribute="centerX" secondItem="6Tk-OE-BBY" secondAttribute="centerX" id="MHh-hg-zUh"/>
-                            <constraint firstItem="1Oc-Om-fso" firstAttribute="centerY" secondItem="6Tk-OE-BBY" secondAttribute="centerY" multiplier="1.5" id="N0x-1C-fPD"/>
+                            <constraint firstItem="1Oc-Om-fso" firstAttribute="centerY" secondItem="6Tk-OE-BBY" secondAttribute="centerY" multiplier="1.625" id="N0x-1C-fPD"/>
                             <constraint firstItem="RRU-Xt-yVf" firstAttribute="height" secondItem="8bC-Xf-vdC" secondAttribute="height" multiplier="0.45" id="ONg-C4-fBq"/>
-                            <constraint firstItem="1Oc-Om-fso" firstAttribute="height" secondItem="8bC-Xf-vdC" secondAttribute="height" multiplier="0.35" id="OeY-Rq-bsF"/>
+                            <constraint firstItem="1Oc-Om-fso" firstAttribute="height" secondItem="8bC-Xf-vdC" secondAttribute="height" multiplier="0.2" id="OeY-Rq-bsF"/>
                             <constraint firstItem="5pt-tc-QNL" firstAttribute="width" secondItem="8bC-Xf-vdC" secondAttribute="width" multiplier="0.9" id="R1z-dn-UAa"/>
                             <constraint firstItem="5pt-tc-QNL" firstAttribute="centerX" secondItem="6Tk-OE-BBY" secondAttribute="centerX" id="VLC-xt-15Y"/>
                             <constraint firstItem="RRU-Xt-yVf" firstAttribute="centerX" secondItem="6Tk-OE-BBY" secondAttribute="centerX" id="ZSP-KC-uD5"/>
                             <constraint firstItem="Aj1-TM-N3e" firstAttribute="centerY" secondItem="6Tk-OE-BBY" secondAttribute="centerY" id="ZoX-31-H6D"/>
                             <constraint firstItem="3QZ-94-XVg" firstAttribute="centerX" secondItem="RRU-Xt-yVf" secondAttribute="centerX" id="Zyp-sr-Z8f"/>
                             <constraint firstItem="3QZ-94-XVg" firstAttribute="height" secondItem="RRU-Xt-yVf" secondAttribute="height" multiplier="0.3" id="cNx-vR-KR4"/>
+                            <constraint firstItem="Hqc-Vy-m2g" firstAttribute="height" secondItem="8bC-Xf-vdC" secondAttribute="height" multiplier="0.25" id="chb-5R-zle"/>
                             <constraint firstItem="1Oc-Om-fso" firstAttribute="width" secondItem="8bC-Xf-vdC" secondAttribute="width" multiplier="0.75" id="dPX-ZS-DKU"/>
                             <constraint firstItem="RcQ-rG-88K" firstAttribute="height" secondItem="8bC-Xf-vdC" secondAttribute="height" id="gZT-qo-2lE"/>
                             <constraint firstItem="3QZ-94-XVg" firstAttribute="centerY" secondItem="RRU-Xt-yVf" secondAttribute="centerY" multiplier="0.9" id="ggm-EB-509"/>
+                            <constraint firstItem="Kii-MN-R30" firstAttribute="height" secondItem="8bC-Xf-vdC" secondAttribute="height" multiplier="0.08" id="j3I-bZ-sE0"/>
                             <constraint firstItem="RcQ-rG-88K" firstAttribute="width" secondItem="8bC-Xf-vdC" secondAttribute="width" id="jPL-Bc-sBg"/>
                             <constraint firstItem="gyg-P7-edv" firstAttribute="width" secondItem="8bC-Xf-vdC" secondAttribute="width" multiplier="0.1" id="ldn-MD-ixg"/>
+                            <constraint firstItem="Kii-MN-R30" firstAttribute="width" secondItem="8bC-Xf-vdC" secondAttribute="width" multiplier="0.8" id="nSm-CT-4DL"/>
                             <constraint firstItem="RcQ-rG-88K" firstAttribute="centerY" secondItem="6Tk-OE-BBY" secondAttribute="centerY" id="pMK-7t-3GV"/>
                             <constraint firstItem="9Qp-cn-t4h" firstAttribute="centerY" secondItem="6Tk-OE-BBY" secondAttribute="centerY" id="pgo-tk-JLY"/>
+                            <constraint firstItem="Hqc-Vy-m2g" firstAttribute="centerY" secondItem="6Tk-OE-BBY" secondAttribute="centerY" multiplier="1.15" id="qmY-Gn-48S"/>
                             <constraint firstItem="Aj1-TM-N3e" firstAttribute="centerX" secondItem="6Tk-OE-BBY" secondAttribute="centerX" id="rYm-RX-GcW"/>
                             <constraint firstItem="gyg-P7-edv" firstAttribute="centerX" secondItem="6Tk-OE-BBY" secondAttribute="centerX" multiplier="0.15" id="sDH-bq-6GP"/>
                             <constraint firstItem="9Qp-cn-t4h" firstAttribute="width" secondItem="8bC-Xf-vdC" secondAttribute="width" id="tMM-Zy-hi9"/>
+                            <constraint firstItem="Kii-MN-R30" firstAttribute="centerY" secondItem="6Tk-OE-BBY" secondAttribute="centerY" multiplier="1.85" id="tnP-3N-wuB"/>
                             <constraint firstItem="5pt-tc-QNL" firstAttribute="centerY" secondItem="6Tk-OE-BBY" secondAttribute="centerY" multiplier="0.12" id="x6e-bB-vNb"/>
                             <constraint firstItem="5pt-tc-QNL" firstAttribute="height" secondItem="8bC-Xf-vdC" secondAttribute="height" multiplier="0.07" id="z2i-fu-aM7"/>
                         </constraints>
@@ -607,6 +625,7 @@ Adding Up Game</string>
                         <outlet property="correctAnswer" destination="cHk-kt-YbW" id="ymq-ga-fww"/>
                         <outlet property="gameOverModalView" destination="9Qp-cn-t4h" id="sqS-KW-Uzh"/>
                         <outlet property="highScoresTableView" destination="e72-33-A1n" id="akW-Z2-08Y"/>
+                        <outlet property="highScoresTitle" destination="cYH-g2-Z1E" id="gwV-nE-62g"/>
                         <outlet property="levelLabel" destination="nMW-LC-Fyk" id="DNH-OV-vMf"/>
                         <outlet property="levelUpLabel" destination="0lJ-j8-E56" id="han-5q-dUB"/>
                         <outlet property="levelUpModalView" destination="RcQ-rG-88K" id="B16-gW-8yU"/>
@@ -616,9 +635,12 @@ Adding Up Game</string>
                         <outlet property="n1" destination="uL9-f2-cnp" id="gE6-am-Y2H"/>
                         <outlet property="n2" destination="yc8-Qc-wzl" id="XTL-Dc-Ko6"/>
                         <outlet property="nameLabel" destination="ESz-mA-zoP" id="4b3-ux-uzu"/>
+                        <outlet property="op" destination="qPC-pG-WvV" id="GA9-xt-4GL"/>
                         <outlet property="picturePlace" destination="1Oc-Om-fso" id="QtE-dq-nfN"/>
+                        <outlet property="readOut" destination="Kii-MN-R30" id="LY2-Ql-71S"/>
                         <outlet property="scoreLabel" destination="f5J-Qd-Fg0" id="ns8-1f-dxv"/>
                         <outlet property="tickOrCross" destination="KOR-oP-E66" id="e4k-GO-yfE"/>
+                        <outlet property="writingArea" destination="Hqc-Vy-m2g" id="rui-vx-Puo"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
